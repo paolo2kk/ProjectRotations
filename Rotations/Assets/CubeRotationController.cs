@@ -3,144 +3,164 @@ using UnityEngine.UI;
 
 public class CubeRotationController : MonoBehaviour
 {
-    public Transform cube; // Reference to the cube
-    public InputField quaternionInput;
-    public InputField eulerInput;
-    public InputField axisAngleInput;
-    public InputField rotationVectorInput;
+    public Transform cube; // Referencia al cubo
+
+    // Panel de Quaternions
+    public InputField quaternionW;
+    public InputField quaternionX;
+    public InputField quaternionY;
+    public InputField quaternionZ;
+
+    // Panel de Euler
+    public InputField eulerYaw;
+    public InputField eulerPitch;
+    public InputField eulerRoll;
+
+    // Panel de Axis-Angle
+    public InputField axisX;
+    public InputField axisY;
+    public InputField axisZ;
+    public InputField axisAngle;
+
+    // Panel de Rotation Vector
+    public InputField rotationVectorX;
+    public InputField rotationVectorY;
+    public InputField rotationVectorZ;
+
+    // Panel de Matriz de Rotación
     public Text rotationMatrixText;
+
+    // Botones
     public Button quaternionButton;
     public Button eulerButton;
     public Button axisAngleButton;
     public Button rotationVectorButton;
     public Button resetButton;
 
-    private Quaternion initialRotation;
+    private Quaternion initialRotation; // Rotación inicial del cubo
 
     void Start()
     {
-        // Store the initial rotation for resetting
+        // Guardar la rotación inicial
         initialRotation = cube.rotation;
 
-        // Attach event listeners to buttons
-        quaternionButton.onClick.AddListener(UpdateFromQuaternion);
-        eulerButton.onClick.AddListener(UpdateFromEuler);
-        axisAngleButton.onClick.AddListener(UpdateFromAxisAngle);
-        rotationVectorButton.onClick.AddListener(UpdateFromRotationVector);
-        resetButton.onClick.AddListener(ResetCube);
+        // Vincular botones
+        quaternionButton.onClick.AddListener(UpdateQuaternion);
+        eulerButton.onClick.AddListener(UpdateEuler);
+        axisAngleButton.onClick.AddListener(UpdateAxisAngle);
+        rotationVectorButton.onClick.AddListener(UpdateRotationVector);
+        resetButton.onClick.AddListener(ResetRotation);
+
+        // Actualizar los valores del Canvas en tiempo real
+        UpdateCanvas();
     }
 
     void Update()
     {
-        // Continuously update all representations
-        UpdatePanels();
+        // Actualizar los valores del Canvas en tiempo real
+        UpdateCanvas();
     }
 
-    void UpdatePanels()
+    void UpdateQuaternion()
     {
-        // Quaternion
-        Quaternion currentRotation = cube.rotation;
-        quaternionInput.text = $"{currentRotation.x:F2}, {currentRotation.y:F2}, {currentRotation.z:F2}, {currentRotation.w:F2}";
-
-        // Euler Angles
-        Vector3 eulerAngles = cube.eulerAngles;
-        eulerInput.text = $"{eulerAngles.x:F2}, {eulerAngles.y:F2}, {eulerAngles.z:F2}";
-
-        // Axis-Angle
-        Vector3 axis;
-        float angle;
-        currentRotation.ToAngleAxis(out angle, out axis);
-        axisAngleInput.text = $"{axis.x:F2}, {axis.y:F2}, {axis.z:F2}, {angle:F2}";
-
-        // Rotation Vector
-        Vector3 rotationVector = axis * angle * Mathf.Deg2Rad;
-        rotationVectorInput.text = $"{rotationVector.x:F2}, {rotationVector.y:F2}, {rotationVector.z:F2}";
-
-        // Rotation Matrix
-        Matrix4x4 rotationMatrix = Matrix4x4.Rotate(currentRotation);
-        rotationMatrixText.text = MatrixToString(rotationMatrix);
-    }
-
-    public void UpdateFromQuaternion()
-    {
-        if (TryParseQuaternion(quaternionInput.text, out Quaternion newRotation))
+        if (float.TryParse(quaternionW.text, out float w) &&
+            float.TryParse(quaternionX.text, out float x) &&
+            float.TryParse(quaternionY.text, out float y) &&
+            float.TryParse(quaternionZ.text, out float z))
         {
-            cube.rotation = newRotation;
+            cube.rotation = new Quaternion(x, y, z, w);
+        }
+        else
+        {
+            Debug.LogError("Error parsing quaternion inputs");
         }
     }
 
-    public void UpdateFromEuler()
+    void UpdateEuler()
     {
-        if (TryParseVector3(eulerInput.text, out Vector3 newEuler))
+        if (float.TryParse(eulerYaw.text, out float yaw) &&
+            float.TryParse(eulerPitch.text, out float pitch) &&
+            float.TryParse(eulerRoll.text, out float roll))
         {
-            cube.rotation = Quaternion.Euler(newEuler);
+            cube.rotation = Quaternion.Euler(pitch, yaw, roll);
+        }
+        else
+        {
+            Debug.LogError("Error parsing euler inputs");
         }
     }
 
-    public void UpdateFromAxisAngle()
+    void UpdateAxisAngle()
     {
-        if (TryParseAxisAngle(axisAngleInput.text, out Vector3 axis, out float angle))
+        if (float.TryParse(axisX.text, out float x) &&
+            float.TryParse(axisY.text, out float y) &&
+            float.TryParse(axisZ.text, out float z) &&
+            float.TryParse(axisAngle.text, out float angle))
         {
+            Vector3 axis = new Vector3(x, y, z).normalized;
             cube.rotation = Quaternion.AngleAxis(angle, axis);
         }
+        else
+        {
+            Debug.LogError("Error parsing axis-angle inputs");
+        }
     }
 
-    public void UpdateFromRotationVector()
+    void UpdateRotationVector()
     {
-        if (TryParseVector3(rotationVectorInput.text, out Vector3 rotationVector))
+        if (float.TryParse(rotationVectorX.text, out float x) &&
+            float.TryParse(rotationVectorY.text, out float y) &&
+            float.TryParse(rotationVectorZ.text, out float z))
         {
+            Vector3 rotationVector = new Vector3(x, y, z);
             float angle = rotationVector.magnitude * Mathf.Rad2Deg;
             Vector3 axis = rotationVector.normalized;
             cube.rotation = Quaternion.AngleAxis(angle, axis);
         }
+        else
+        {
+            Debug.LogError("Error parsing rotation vector inputs");
+        }
     }
 
-    public void ResetCube()
+    void ResetRotation()
     {
+        // Restaurar la rotación inicial
         cube.rotation = initialRotation;
-        UpdatePanels();
     }
 
-    private bool TryParseQuaternion(string input, out Quaternion quaternion)
+    void UpdateCanvas()
     {
-        string[] values = input.Split(',');
-        quaternion = Quaternion.identity;
-        if (values.Length != 4) return false;
+        // Actualizar Quaternions
+        quaternionW.text = cube.rotation.w.ToString("F3");
+        quaternionX.text = cube.rotation.x.ToString("F3");
+        quaternionY.text = cube.rotation.y.ToString("F3");
+        quaternionZ.text = cube.rotation.z.ToString("F3");
 
-        return float.TryParse(values[0], out quaternion.x) &&
-               float.TryParse(values[1], out quaternion.y) &&
-               float.TryParse(values[2], out quaternion.z) &&
-               float.TryParse(values[3], out quaternion.w);
-    }
+        // Actualizar Euler Angles
+        Vector3 euler = cube.rotation.eulerAngles;
+        eulerYaw.text = euler.y.ToString("F3");
+        eulerPitch.text = euler.x.ToString("F3");
+        eulerRoll.text = euler.z.ToString("F3");
 
-    private bool TryParseVector3(string input, out Vector3 vector)
-    {
-        string[] values = input.Split(',');
-        vector = Vector3.zero;
-        if (values.Length != 3) return false;
+        // Actualizar Axis-Angle
+        cube.rotation.ToAngleAxis(out float angle, out Vector3 axis);
+        axisX.text = axis.x.ToString("F3");
+        axisY.text = axis.y.ToString("F3");
+        axisZ.text = axis.z.ToString("F3");
+        axisAngle.text = angle.ToString("F3");
 
-        return float.TryParse(values[0], out vector.x) &&
-               float.TryParse(values[1], out vector.y) &&
-               float.TryParse(values[2], out vector.z);
-    }
+        // Actualizar Rotation Vector
+        Vector3 rotationVector = axis * (angle * Mathf.Deg2Rad);
+        rotationVectorX.text = rotationVector.x.ToString("F3");
+        rotationVectorY.text = rotationVector.y.ToString("F3");
+        rotationVectorZ.text = rotationVector.z.ToString("F3");
 
-    private bool TryParseAxisAngle(string input, out Vector3 axis, out float angle)
-    {
-        string[] values = input.Split(',');
-        axis = Vector3.zero;
-        angle = 0f;
-        if (values.Length != 4) return false;
-
-        return float.TryParse(values[0], out axis.x) &&
-               float.TryParse(values[1], out axis.y) &&
-               float.TryParse(values[2], out axis.z) &&
-               float.TryParse(values[3], out angle);
-    }
-
-    private string MatrixToString(Matrix4x4 matrix)
-    {
-        return $"{matrix.m00:F2}, {matrix.m01:F2}, {matrix.m02:F2}\n" +
-               $"{matrix.m10:F2}, {matrix.m11:F2}, {matrix.m12:F2}\n" +
-               $"{matrix.m20:F2}, {matrix.m21:F2}, {matrix.m22:F2}";
+        // Actualizar Rotation Matrix
+        Matrix4x4 matrix = Matrix4x4.Rotate(cube.rotation);
+        rotationMatrixText.text =
+            $"{matrix.m00:F3} {matrix.m01:F3} {matrix.m02:F3}\n" +
+            $"{matrix.m10:F3} {matrix.m11:F3} {matrix.m12:F3}\n" +
+            $"{matrix.m20:F3} {matrix.m21:F3} {matrix.m22:F3}";
     }
 }
