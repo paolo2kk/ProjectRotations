@@ -7,25 +7,39 @@ public class CubeRotationController : MonoBehaviour
 
     // Panel de Quaternions
     public InputField quaternionW;
+    public InputField quaternionW2;
     public InputField quaternionX;
+    public InputField quaternionX2;
     public InputField quaternionY;
+    public InputField quaternionY2;
     public InputField quaternionZ;
+    public InputField quaternionZ2;
 
     // Panel de Euler
     public InputField eulerYaw;
+    public InputField eulerYaw2;
     public InputField eulerPitch;
+    public InputField eulerPitch2;
     public InputField eulerRoll;
+    public InputField eulerRoll2;
 
     // Panel de Axis-Angle
     public InputField axisX;
+    public InputField axisX2;
     public InputField axisY;
+    public InputField axisY2;
     public InputField axisZ;
+    public InputField axisZ2;
     public InputField axisAngle;
+    public InputField axisAngle2;
 
     // Panel de Rotation Vector
     public InputField rotationVectorX;
+    public InputField rotationVectorX2;
     public InputField rotationVectorY;
+    public InputField rotationVectorY2;
     public InputField rotationVectorZ;
+    public InputField rotationVectorZ2;
 
     // Panel de Matriz de Rotación
     public Text rotationMatrixText;
@@ -38,6 +52,7 @@ public class CubeRotationController : MonoBehaviour
     public Button resetButton;
 
     private Quaternion initialRotation; // Rotación inicial del cubo
+    private Quaternion originalQuaternion;
 
     void Start()
     {
@@ -62,27 +77,29 @@ public class CubeRotationController : MonoBehaviour
     }
 
     void UpdateQuaternion()
+{
+    if (float.TryParse(quaternionW2.text, out float w) &&
+        float.TryParse(quaternionX2.text, out float x) &&
+        float.TryParse(quaternionY2.text, out float y) &&
+        float.TryParse(quaternionZ2.text, out float z))
     {
-        if (float.TryParse(quaternionW.text, out float w) &&
-            float.TryParse(quaternionX.text, out float x) &&
-            float.TryParse(quaternionY.text, out float y) &&
-            float.TryParse(quaternionZ.text, out float z))
-        {
-            cube.rotation = new Quaternion(x, y, z, w);
-        }
-        else
-        {
-            Debug.LogError("Error parsing quaternion inputs");
-        }
+        originalQuaternion = new Quaternion(x, y, z, w);
+        cube.rotation = originalQuaternion.normalized; 
     }
+}
 
     void UpdateEuler()
     {
-        if (float.TryParse(eulerYaw.text, out float yaw) &&
-            float.TryParse(eulerPitch.text, out float pitch) &&
-            float.TryParse(eulerRoll.text, out float roll))
+        if (float.TryParse(eulerYaw2.text, out float yaw) &&
+            float.TryParse(eulerPitch2.text, out float pitch) &&
+            float.TryParse(eulerRoll2.text, out float roll))
         {
-            cube.rotation = Quaternion.Euler(pitch, yaw, roll);
+            // Crear rotación basada en ángulos de Euler
+            Quaternion eulerRotation = Quaternion.Euler(yaw, pitch, roll);
+
+            // Asignar la rotación normalizada al cubo
+            cube.rotation = eulerRotation.normalized;
+
         }
         else
         {
@@ -90,15 +107,22 @@ public class CubeRotationController : MonoBehaviour
         }
     }
 
+
     void UpdateAxisAngle()
     {
-        if (float.TryParse(axisX.text, out float x) &&
-            float.TryParse(axisY.text, out float y) &&
-            float.TryParse(axisZ.text, out float z) &&
-            float.TryParse(axisAngle.text, out float angle))
+        if (float.TryParse(axisX2.text, out float x) &&
+            float.TryParse(axisY2.text, out float y) &&
+            float.TryParse(axisZ2.text, out float z) &&
+            float.TryParse(axisAngle2.text, out float angle))
         {
+            // Normalizar el vector de eje
             Vector3 axis = new Vector3(x, y, z).normalized;
-            cube.rotation = Quaternion.AngleAxis(angle, axis);
+
+            // Crear rotación basada en el eje y el ángulo
+            Quaternion axisAngleRotation = Quaternion.AngleAxis(angle, axis);
+
+            // Asignar la rotación normalizada al cubo
+            cube.rotation = axisAngleRotation.normalized;
         }
         else
         {
@@ -108,20 +132,31 @@ public class CubeRotationController : MonoBehaviour
 
     void UpdateRotationVector()
     {
-        if (float.TryParse(rotationVectorX.text, out float x) &&
-            float.TryParse(rotationVectorY.text, out float y) &&
-            float.TryParse(rotationVectorZ.text, out float z))
+        if (float.TryParse(rotationVectorX2.text, out float x) &&
+            float.TryParse(rotationVectorY2.text, out float y) &&
+            float.TryParse(rotationVectorZ2.text, out float z))
         {
+            // Crear un vector de rotación
             Vector3 rotationVector = new Vector3(x, y, z);
+
+            // Calcular la magnitud del vector y convertir a grados
             float angle = rotationVector.magnitude * Mathf.Rad2Deg;
+
+            // Normalizar el vector para obtener el eje de rotación
             Vector3 axis = rotationVector.normalized;
-            cube.rotation = Quaternion.AngleAxis(angle, axis);
+
+            // Crear rotación basada en el eje y el ángulo
+            Quaternion rotationVectorRotation = Quaternion.AngleAxis(angle, axis);
+
+            // Asignar la rotación normalizada al cubo
+            cube.rotation = rotationVectorRotation.normalized;
         }
         else
         {
             Debug.LogError("Error parsing rotation vector inputs");
         }
     }
+
 
     void ResetRotation()
     {
@@ -139,8 +174,8 @@ public class CubeRotationController : MonoBehaviour
 
         // Actualizar Euler Angles
         Vector3 euler = cube.rotation.eulerAngles;
-        eulerYaw.text = euler.y.ToString("F3");
-        eulerPitch.text = euler.x.ToString("F3");
+        eulerYaw.text = euler.x.ToString("F3");
+        eulerPitch.text = euler.y.ToString("F3");
         eulerRoll.text = euler.z.ToString("F3");
 
         // Actualizar Axis-Angle
