@@ -42,7 +42,9 @@ public class CubeRotationController : MonoBehaviour
     public InputField rotationVectorZ2;
 
     // Panel de Matriz de Rotación
-    public Text rotationMatrixText;
+    public Text Matrix00, Matrix01, Matrix02;
+    public Text Matrix10, Matrix11, Matrix12;
+    public Text Matrix20, Matrix21, Matrix22;
 
     // Botones
     public Button quaternionButton;
@@ -51,42 +53,41 @@ public class CubeRotationController : MonoBehaviour
     public Button rotationVectorButton;
     public Button resetButton;
 
-    private Quaternion initialRotation; // Rotación inicial del cubo
+    private Quaternion initialRotation; 
     private Quaternion originalQuaternion;
 
     void Start()
     {
-        // Guardar la rotación inicial
         initialRotation = cube.rotation;
 
-        // Vincular botones
         quaternionButton.onClick.AddListener(UpdateQuaternion);
         eulerButton.onClick.AddListener(UpdateEuler);
         axisAngleButton.onClick.AddListener(UpdateAxisAngle);
         rotationVectorButton.onClick.AddListener(UpdateRotationVector);
         resetButton.onClick.AddListener(ResetRotation);
 
-        // Actualizar los valores del Canvas en tiempo real
         UpdateCanvas();
     }
 
     void Update()
     {
-        // Actualizar los valores del Canvas en tiempo real
-        UpdateCanvas();
+        DisplayEulerAngles();
+        DisplayQuaternion();
+        DisplayEulerAxisAndAngle();
+        DisplayMatrix();
     }
 
     void UpdateQuaternion()
-{
-    if (float.TryParse(quaternionW2.text, out float w) &&
-        float.TryParse(quaternionX2.text, out float x) &&
-        float.TryParse(quaternionY2.text, out float y) &&
-        float.TryParse(quaternionZ2.text, out float z))
     {
-        originalQuaternion = new Quaternion(x, y, z, w);
-        cube.rotation = originalQuaternion.normalized; 
+        if (float.TryParse(quaternionW2.text, out float w) &&
+            float.TryParse(quaternionX2.text, out float x) &&
+            float.TryParse(quaternionY2.text, out float y) &&
+            float.TryParse(quaternionZ2.text, out float z))
+        {
+            originalQuaternion = new Quaternion(x, y, z, w);
+            cube.rotation = originalQuaternion.normalized;
+        }
     }
-}
 
     void UpdateEuler()
     {
@@ -94,19 +95,10 @@ public class CubeRotationController : MonoBehaviour
             float.TryParse(eulerPitch2.text, out float pitch) &&
             float.TryParse(eulerRoll2.text, out float roll))
         {
-            // Crear rotación basada en ángulos de Euler
             Quaternion eulerRotation = Quaternion.Euler(yaw, pitch, roll);
-
-            // Asignar la rotación normalizada al cubo
             cube.rotation = eulerRotation.normalized;
-
-        }
-        else
-        {
-            Debug.LogError("Error parsing euler inputs");
         }
     }
-
 
     void UpdateAxisAngle()
     {
@@ -115,18 +107,9 @@ public class CubeRotationController : MonoBehaviour
             float.TryParse(axisZ2.text, out float z) &&
             float.TryParse(axisAngle2.text, out float angle))
         {
-            // Normalizar el vector de eje
             Vector3 axis = new Vector3(x, y, z).normalized;
-
-            // Crear rotación basada en el eje y el ángulo
             Quaternion axisAngleRotation = Quaternion.AngleAxis(angle, axis);
-
-            // Asignar la rotación normalizada al cubo
             cube.rotation = axisAngleRotation.normalized;
-        }
-        else
-        {
-            Debug.LogError("Error parsing axis-angle inputs");
         }
     }
 
@@ -136,66 +119,95 @@ public class CubeRotationController : MonoBehaviour
             float.TryParse(rotationVectorY2.text, out float y) &&
             float.TryParse(rotationVectorZ2.text, out float z))
         {
-            // Crear un vector de rotación
             Vector3 rotationVector = new Vector3(x, y, z);
-
-            // Calcular la magnitud del vector y convertir a grados
             float angle = rotationVector.magnitude * Mathf.Rad2Deg;
-
-            // Normalizar el vector para obtener el eje de rotación
             Vector3 axis = rotationVector.normalized;
-
-            // Crear rotación basada en el eje y el ángulo
             Quaternion rotationVectorRotation = Quaternion.AngleAxis(angle, axis);
-
-            // Asignar la rotación normalizada al cubo
             cube.rotation = rotationVectorRotation.normalized;
-        }
-        else
-        {
-            Debug.LogError("Error parsing rotation vector inputs");
         }
     }
 
-
     void ResetRotation()
     {
-        // Restaurar la rotación inicial
         cube.rotation = initialRotation;
     }
 
     void UpdateCanvas()
     {
-        // Actualizar Quaternions
+        DisplayQuaternion();
+        DisplayEulerAngles();
+        DisplayEulerAxisAndAngle();
+        DisplayMatrix();
+    }
+
+    // Nuevas funciones
+    void DisplayQuaternion()
+    {
         quaternionW.text = cube.rotation.w.ToString("F3");
         quaternionX.text = cube.rotation.x.ToString("F3");
         quaternionY.text = cube.rotation.y.ToString("F3");
         quaternionZ.text = cube.rotation.z.ToString("F3");
+    }
 
-        // Actualizar Euler Angles
+    void DisplayEulerAngles()
+    {
         Vector3 euler = cube.rotation.eulerAngles;
         eulerYaw.text = euler.x.ToString("F3");
         eulerPitch.text = euler.y.ToString("F3");
         eulerRoll.text = euler.z.ToString("F3");
+    }
 
-        // Actualizar Axis-Angle
+    void DisplayEulerAxisAndAngle()
+    {
         cube.rotation.ToAngleAxis(out float angle, out Vector3 axis);
         axisX.text = axis.x.ToString("F3");
         axisY.text = axis.y.ToString("F3");
         axisZ.text = axis.z.ToString("F3");
         axisAngle.text = angle.ToString("F3");
+    }
 
-        // Actualizar Rotation Vector
-        Vector3 rotationVector = axis * (angle * Mathf.Deg2Rad);
-        rotationVectorX.text = rotationVector.x.ToString("F3");
-        rotationVectorY.text = rotationVector.y.ToString("F3");
-        rotationVectorZ.text = rotationVector.z.ToString("F3");
+    void DisplayMatrix()
+    {
+        Matrix4x4 M = EulerAnglesToMatrix(cube.transform.rotation.eulerAngles);
 
-        // Actualizar Rotation Matrix
-        Matrix4x4 matrix = Matrix4x4.Rotate(cube.rotation);
-        rotationMatrixText.text =
-            $"{matrix.m00:F3} {matrix.m01:F3} {matrix.m02:F3}\n" +
-            $"{matrix.m10:F3} {matrix.m11:F3} {matrix.m12:F3}\n" +
-            $"{matrix.m20:F3} {matrix.m21:F3} {matrix.m22:F3}";
+        Matrix00.text = M[0, 0].ToString("F3");
+        Matrix01.text = M[0, 1].ToString("F3");
+        Matrix02.text = M[0, 2].ToString("F3");
+        Matrix10.text = M[1, 0].ToString("F3");
+        Matrix11.text = M[1, 1].ToString("F3");
+        Matrix12.text = M[1, 2].ToString("F3");
+        Matrix20.text = M[2, 0].ToString("F3");
+        Matrix21.text = M[2, 1].ToString("F3");
+        Matrix22.text = M[2, 2].ToString("F3");
+    }
+
+    public static Matrix4x4 EulerAnglesToMatrix(Vector3 angles)
+    {
+        float roll = angles.x * Mathf.Deg2Rad;
+        float pitch = angles.y * Mathf.Deg2Rad;
+        float yaw = angles.z * Mathf.Deg2Rad;
+
+        Matrix4x4 Rx = new Matrix4x4(
+            new Vector4(1, 0, 0, 0),
+            new Vector4(0, Mathf.Cos(roll), -Mathf.Sin(roll), 0),
+            new Vector4(0, Mathf.Sin(roll), Mathf.Cos(roll), 0),
+            new Vector4(0, 0, 0, 1)
+        );
+
+        Matrix4x4 Ry = new Matrix4x4(
+            new Vector4(Mathf.Cos(pitch), 0, Mathf.Sin(pitch), 0),
+            new Vector4(0, 1, 0, 0),
+            new Vector4(-Mathf.Sin(pitch), 0, Mathf.Cos(pitch), 0),
+            new Vector4(0, 0, 0, 1)
+        );
+
+        Matrix4x4 Rz = new Matrix4x4(
+            new Vector4(Mathf.Cos(yaw), -Mathf.Sin(yaw), 0, 0),
+            new Vector4(Mathf.Sin(yaw), Mathf.Cos(yaw), 0, 0),
+            new Vector4(0, 0, 1, 0),
+            new Vector4(0, 0, 0, 1)
+        );
+
+        return Rz * Ry * Rx;
     }
 }
